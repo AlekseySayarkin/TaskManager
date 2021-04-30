@@ -53,7 +53,7 @@ public class TaskController {
                 .body(resource);
     }
 
-    @PutMapping
+    @PutMapping("/{id}")
     public ResponseEntity<Task> updateTask(@RequestPart Task task, MultipartFile file) {
         return ResponseEntity.ok().body(taskService.update(task, file));
     }

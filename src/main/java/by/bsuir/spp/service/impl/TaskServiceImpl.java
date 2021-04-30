@@ -92,9 +92,9 @@ public class TaskServiceImpl implements TaskService {
         UserValidator.validateUserId(userId);
         TaskValidator.validateTask(task);
         try {
-            if (file != null) {
-               task.setFile(saveFile(file));
-            }
+            if (file != null)
+               task.setFile( fileRepository.save(saveFile(file)));
+
             task.setStatus(new Status(1, Status.StatusType.ACTIVE));
             task.setUser(userService.findById(userId));
 
@@ -137,7 +137,7 @@ public class TaskServiceImpl implements TaskService {
         fileToSave.setName(file.getOriginalFilename());
         fileToSave.setData(file.getBytes());
 
-        return fileRepository.save(fileToSave);
+        return fileToSave;
     }
 
     private Task updateExistingTask(Task existingTask) throws TaskManagerException {
@@ -145,15 +145,16 @@ public class TaskServiceImpl implements TaskService {
             log.trace("Failed to find task by id: " + existingTask.getId());
             return new TaskManagerException("Failed to fined task by id: " + existingTask.getId());
         });
+
         if (existingTask.getTask() != null)
             task.setTask(existingTask.getTask());
         if (existingTask.getStatus() != null)
             task.setStatus(getStatusFromTask(existingTask));
         if (existingTask.getEndDate() != null)
             task.setEndDate(existingTask.getEndDate());
-        if (existingTask.getFile() != null)
-            task.setFile(existingTask.getFile());
-        else if (task.getFile() != null)
+        if (existingTask.getFile() != null && existingTask.getFile().getData().length != 0)
+            task.setFile(fileRepository.save(existingTask.getFile()));
+        else if (task.getFile() != null && existingTask.getFile() == null)
             deleteFile(task);
 
         return taskRepository.save(task);

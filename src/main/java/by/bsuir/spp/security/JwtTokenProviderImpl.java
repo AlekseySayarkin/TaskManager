@@ -1,12 +1,10 @@
 package by.bsuir.spp.security;
 
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.extern.log4j.Log4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -52,39 +50,35 @@ public class JwtTokenProviderImpl implements JwtTokenProvider {
     }
 
     @Override
-    public boolean validateJwtToken(String token) throws AuthenticationServiceException {
+    public boolean validateJwtToken(String token) {
         try {
             var claimsJws = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
             return new Date().before(claimsJws.getBody().getExpiration());
-        } catch (ExpiredJwtException e) {
-            log.error("Failed to validate jwt token: jwt token expired");
-            throw new AuthenticationServiceException("Failed to validate jwt token: jwt token expired");
         } catch (JwtException | IllegalArgumentException e) {
-            log.error("Failed to validate jwt token");
-            throw new AuthenticationServiceException("Failed to validate jwt token");
+            return false;
         }
     }
 
     @Override
-    public Authentication getAuthentication(String token) throws AuthenticationServiceException {
+    public Authentication getAuthentication(String token) {
         var details = userDetailsService.loadUserByUsername(getUserName(token));
         return new UsernamePasswordAuthenticationToken(
-                details, null, Collections.singleton(new SimpleGrantedAuthority("any"))
+            details, null, Collections.singleton(new SimpleGrantedAuthority("any"))
         );
     }
 
     @Override
-    public String getUserName(String token) throws AuthenticationServiceException {
+    public String getUserName(String token) {
         try {
             return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().getSubject();
         } catch (JwtException | IllegalArgumentException e) {
             log.error("Failed to get username from jwt token");
-            throw new AuthenticationServiceException("Failed to get username from jwt token");
+            return "";
         }
     }
 
     @Override
-    public String resolveToken(HttpServletRequest request) throws AuthenticationServiceException {
+    public String resolveToken(HttpServletRequest request) {
         var token = request.getHeader(AUTHORIZATION_HEADER);
         return token == null || token.isEmpty() ? null : token;
     }

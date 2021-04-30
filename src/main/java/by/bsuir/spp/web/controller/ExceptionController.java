@@ -12,15 +12,15 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class ExceptionController {
 
     @ExceptionHandler(TaskManagerException.class)
-    public ResponseEntity<TaskManagerException> handleTaskManagerException(TaskManagerException exception) {
+    public ResponseEntity<String> handleTaskManagerException(TaskManagerException exception) {
         log.error(exception.getMessage());
         exception.printStackTrace();
-        return new ResponseEntity<>(exception, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Exception> handleException(Exception exception) {
+    @ExceptionHandler
+    public ResponseEntity<String> handleException(Exception exception) {
         log.error(exception.getMessage());
-        return new ResponseEntity<>(exception, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
 }
