@@ -92,14 +92,14 @@ public class TaskServiceImpl implements TaskService {
         UserValidator.validateUserId(userId);
         TaskValidator.validateTask(task);
         try {
-            if (file != null)
-               task.setFile( fileRepository.save(saveFile(file)));
+            if (task.getFile() != null)
+               task.setFile(fileRepository.save(task.getFile()));
 
             task.setStatus(new Status(1, Status.StatusType.ACTIVE));
             task.setUser(userService.findById(userId));
 
             return taskRepository.save(task);
-        } catch (DataAccessException | IOException e) {
+        } catch (DataAccessException e) {
             log.error("Failed to save task");
             throw new NotFoundException("Failed to save task");
         }
@@ -123,7 +123,7 @@ public class TaskServiceImpl implements TaskService {
         TaskValidator.validateTask(task);
         try {
             if (file != null) {
-                task.setFile(saveFile(file));
+                task.setFile(saveFile(file)); // not needed anymore
             }
             return updateExistingTask(task);
         } catch (DataAccessException | IOException e) {
@@ -140,22 +140,20 @@ public class TaskServiceImpl implements TaskService {
         return fileToSave;
     }
 
-    private Task updateExistingTask(Task existingTask) throws TaskManagerException {
-        var task = taskRepository.findById(existingTask.getId()).orElseThrow(() -> {
-            log.trace("Failed to find task by id: " + existingTask.getId());
-            return new TaskManagerException("Failed to fined task by id: " + existingTask.getId());
+    private Task updateExistingTask(Task receivedTask) throws TaskManagerException {
+        var task = taskRepository.findById(receivedTask.getId()).orElseThrow(() -> {
+            log.trace("Failed to find task by id: " + receivedTask.getId());
+            return new TaskManagerException("Failed to fined task by id: " + receivedTask.getId());
         });
 
-        if (existingTask.getTask() != null)
-            task.setTask(existingTask.getTask());
-        if (existingTask.getStatus() != null)
-            task.setStatus(getStatusFromTask(existingTask));
-        if (existingTask.getEndDate() != null)
-            task.setEndDate(existingTask.getEndDate());
-        if (existingTask.getFile() != null && existingTask.getFile().getData().length != 0)
-            task.setFile(fileRepository.save(existingTask.getFile()));
-        else if (task.getFile() != null && existingTask.getFile() == null)
-            deleteFile(task);
+        if (receivedTask.getTask() != null)
+            task.setTask(receivedTask.getTask());
+        if (receivedTask.getStatus() != null)
+            task.setStatus(getStatusFromTask(receivedTask));
+        if (receivedTask.getEndDate() != null)
+            task.setEndDate(receivedTask.getEndDate());
+        if (receivedTask.getFile() != null && receivedTask.getFile().getData().length != 0)
+            task.setFile(fileRepository.save(receivedTask.getFile()));
 
         return taskRepository.save(task);
     }

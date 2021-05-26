@@ -19,6 +19,5 @@ public class File {
 
     @Lob
     @Column(name = "Data")
-    @JsonIgnore
     private byte[] data;
 }

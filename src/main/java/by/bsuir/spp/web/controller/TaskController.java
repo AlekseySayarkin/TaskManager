@@ -1,7 +1,6 @@
 package by.bsuir.spp.web.controller;
 
 import by.bsuir.spp.model.Task;
-import by.bsuir.spp.security.UserDetailsImpl;
 import by.bsuir.spp.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
@@ -9,14 +8,17 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
-@RequestMapping("/user/tasks")
 @CrossOrigin(origins="http://localhost:4200")
 public class TaskController {
 
@@ -26,48 +28,38 @@ public class TaskController {
     public TaskController(TaskService taskService) {
         this.taskService = taskService;
     }
-
-    @GetMapping
-    public ResponseEntity<List<Task>> getTasks(@RequestParam Integer page, @RequestParam Integer size,
-                               @RequestParam String sortType, @RequestParam String sortBy, @RequestParam String status) {
-        var details = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        var userId = details.getId();
-        return ResponseEntity.ok().body(taskService.findByUserId(userId, page, size, sortType, sortBy, status));
+    
+    @MessageMapping("/get/user/tasks")
+    @SendTo("/ws/greetings")
+    public ResponseEntity<List<Task>> getTasks(String status) {
+        var userId = 1;
+        return ResponseEntity.ok().body(taskService.findByUserId(userId, 1, 100, "asc", "task", status.replace("\"", "")));
     }
-
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Task> saveTask(@RequestPart Task task, MultipartFile file) {
-        var details = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        var userId = details.getId();
-        return ResponseEntity.ok().body(taskService.save(userId, task, file));
+    
+    @MessageMapping("/post/user/tasks/{id}")
+    @SendTo("/ws/greetings")
+    public ResponseEntity<Task> saveTask(@RequestPart Task task) {
+        var userId = 1;
+        return ResponseEntity.ok().body(taskService.save(userId, task, null));
     }
-
-    @GetMapping("/{id}/file")
-    public ResponseEntity<Resource> downloadFile(@PathVariable Integer id) {
+    
+    @MessageMapping("/get/user/tasks/file")
+    @SendTo("/ws/greetings")
+    public ResponseEntity<byte[]> downloadFile(Integer id) {
         var task = taskService.findById(id);
-        var resource = new ByteArrayResource(task.getFile().getData());
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .contentLength(resource.contentLength())
-                .header("Content-Disposition", "attachment; filename=\"" + task.getFile().getName() + "\"")
-                .body(resource);
+        return ResponseEntity.ok().body(task.getFile().getData());
     }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Task> updateTask(@RequestPart Task task, MultipartFile file) {
-        return ResponseEntity.ok().body(taskService.update(task, file));
+    
+    @MessageMapping("/put/user/tasks/{id}")
+    @SendTo("/ws/greetings")
+    public ResponseEntity<Task> updateTask(@RequestPart("task") Task task) {
+        return ResponseEntity.ok().body(taskService.update(task, null));
     }
-
-    @DeleteMapping("/{id}")
-    public HttpStatus deleteTask(@PathVariable Integer id) {
+    
+    @MessageMapping("/delete/user/tasks/{id}")
+    @SendTo("/ws/greetings")
+    public HttpStatus deleteTask(Integer id) {
         taskService.deleteById(id);
         return HttpStatus.OK;
-    }
-
-    @GetMapping("/count")
-    public ResponseEntity<Long> getCount() {
-        var details = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        var userId = details.getId();
-        return ResponseEntity.ok().body(taskService.countTaskByUserId(userId));
     }
 }

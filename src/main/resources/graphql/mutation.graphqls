@@ -1,0 +1,14 @@
+type Mutation {
+    createTask(input: TaskInput) : Task!
+    deleteTask(id: Int) : Message
+    updateTask(input: TaskInput, id: Int) : Task
+}
+
+type Message {
+    message: String!
+}
+
+input TaskInput {
+    task: String!
+    endDate: String!
+}

@@ -1,6 +1,7 @@
 package by.bsuir.spp.model;
 
 import lombok.Data;
+import lombok.ToString;
 
 import javax.persistence.*;
 import java.util.List;

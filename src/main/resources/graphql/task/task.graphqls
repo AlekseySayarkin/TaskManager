@@ -1,0 +1,13 @@
+type Task {
+    id: Int!
+    task: String!
+    endDate: String!
+    status: String
+}
+
+type TaskDto {
+    id: Int!
+    task: String!
+    endDate: String!
+    status: String
+}
